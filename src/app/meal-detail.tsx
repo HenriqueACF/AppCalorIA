@@ -1,16 +1,19 @@
 import { useEffect, useState } from 'react';
 import { View, Text, Button, FlatList, Alert, StyleSheet } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+
 import { saveMeal } from '../database/db';
+import { MealItemInput } from '@/types/meal';
 
 export default function MealDetailScreen() {
     const { imageUri } = useLocalSearchParams<{ imageUri: string }>();
     const router = useRouter();
-    const [items, setItems] = useState<any[]>([]);
+    const [items, setItems] = useState<MealItemInput[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const mockData = {
+        // TODO: substituir pelo resultado real da análise de imagem (IA/API)
+        const mockData: { items: MealItemInput[]; total_kcal: number } = {
             items: [
                 { food_name: 'Arroz', portion_g: 150, kcal: 195, protein_g: 3.6, fat_g: 0.4, carbs_g: 43 },
                 { food_name: 'Feijão', portion_g: 100, kcal: 77, protein_g: 5, fat_g: 0.5, carbs_g: 14 },

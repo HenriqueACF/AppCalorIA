@@ -1,12 +1,15 @@
 import * as SQLite from 'expo-sqlite';
 
+import { Meal, MealItemInput } from '@/types/meal';
+
 let db: SQLite.SQLiteDatabase | null = null;
 
 function getDatabase(): SQLite.SQLiteDatabase {
     if (!db) {
         db = SQLite.openDatabaseSync('caloria.db');
 
-        // Criação das tabelas usando runSync (compatível com todas as versões)
+        db.execSync('PRAGMA foreign_keys = ON;');
+
         db.runSync(`
       CREATE TABLE IF NOT EXISTS Meal (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -42,27 +45,52 @@ export const getTodayTotalKcal = (): number => {
     return result?.total ?? 0;
 };
 
-export const saveMeal = (items: any[], imagePath?: string): void => {
+export const saveMeal = (items: MealItemInput[], imagePath?: string): void => {
     const database = getDatabase();
     const datetime = new Date().toISOString();
     const totalKcal = items.reduce((s, i) => s + i.kcal, 0);
-    const notes = items.map(i => `${i.food_name} (${i.portion_g}g)`).join(', ');
+    const notes = items.map((i) => `${i.food_name} (${i.portion_g}g)`).join(', ');
 
-    const insertMeal = database.prepareSync(
-        'INSERT INTO Meal (datetime, image_path, total_kcal, notes) VALUES (?, ?, ?, ?)'
-    );
-    const result = insertMeal.executeSync([datetime, imagePath || null, totalKcal, notes]);
-    const mealId = result.lastInsertRowId;
+    database.execSync('BEGIN;');
+    try {
+        const insertMeal = database.prepareSync(
+            'INSERT INTO Meal (datetime, image_path, total_kcal, notes) VALUES (?, ?, ?, ?)'
+        );
+        let mealId: number;
+        try {
+            const result = insertMeal.executeSync([datetime, imagePath ?? null, totalKcal, notes]);
+            mealId = result.lastInsertRowId;
+        } finally {
+            insertMeal.finalizeSync();
+        }
 
-    const insertItem = database.prepareSync(
-        'INSERT INTO MealItem (meal_id, food_name, portion_g, kcal, protein_g, fat_g, carbs_g) VALUES (?, ?, ?, ?, ?, ?, ?)'
-    );
-    for (const item of items) {
-        insertItem.executeSync([mealId, item.food_name, item.portion_g, item.kcal, item.protein_g, item.fat_g, item.carbs_g]);
+        const insertItem = database.prepareSync(
+            'INSERT INTO MealItem (meal_id, food_name, portion_g, kcal, protein_g, fat_g, carbs_g) VALUES (?, ?, ?, ?, ?, ?, ?)'
+        );
+        try {
+            for (const item of items) {
+                insertItem.executeSync([
+                    mealId,
+                    item.food_name,
+                    item.portion_g,
+                    item.kcal,
+                    item.protein_g,
+                    item.fat_g,
+                    item.carbs_g,
+                ]);
+            }
+        } finally {
+            insertItem.finalizeSync();
+        }
+
+        database.execSync('COMMIT;');
+    } catch (error) {
+        database.execSync('ROLLBACK;');
+        throw error;
     }
 };
 
-export const getMeals = (): any[] => {
+export const getMeals = (): Meal[] => {
     const database = getDatabase();
-    return database.getAllSync<any>('SELECT * FROM Meal ORDER BY datetime DESC LIMIT 30');
+    return database.getAllSync<Meal>('SELECT * FROM Meal ORDER BY datetime DESC LIMIT 30');
 };
