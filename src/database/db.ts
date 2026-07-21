@@ -1,29 +1,13 @@
 import * as SQLite from 'expo-sqlite';
 
-export type MealItemInput = {
-    food_name: string;
-    portion_g: number;
-    kcal: number;
-    protein_g: number;
-    fat_g: number;
-    carbs_g: number;
-};
-
-export type Meal = {
-    id: number;
-    datetime: string;
-    image_path: string | null;
-    total_kcal: number;
-    notes: string | null;
-};
-
 let db: SQLite.SQLiteDatabase | null = null;
 
-async function getDb() {
+function getDatabase(): SQLite.SQLiteDatabase {
     if (!db) {
-        db = await SQLite.openDatabaseAsync('caloria.db');
-        await db.execAsync(`
-      PRAGMA foreign_keys = ON;
+        db = SQLite.openDatabaseSync('caloria.db');
+
+        // Criação das tabelas usando runSync (compatível com todas as versões)
+        db.runSync(`
       CREATE TABLE IF NOT EXISTS Meal (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         datetime TEXT NOT NULL,
@@ -31,6 +15,9 @@ async function getDb() {
         total_kcal REAL,
         notes TEXT
       );
+    `);
+
+        db.runSync(`
       CREATE TABLE IF NOT EXISTS MealItem (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         meal_id INTEGER,
@@ -47,37 +34,35 @@ async function getDb() {
     return db;
 }
 
-export const initDatabase = getDb;
-
-export const getTodayTotalKcal = async (): Promise<number> => {
-    const database = await getDb();
-    const row = await database.getFirstAsync<{ total: number }>(
+export const getTodayTotalKcal = (): number => {
+    const database = getDatabase();
+    const result = database.getFirstSync<{ total: number }>(
         "SELECT COALESCE(SUM(total_kcal), 0) as total FROM Meal WHERE date(datetime) = date('now')"
     );
-    return row?.total ?? 0;
+    return result?.total ?? 0;
 };
 
-export const saveMeal = async (items: MealItemInput[], imagePath?: string) => {
-    const database = await getDb();
+export const saveMeal = (items: any[], imagePath?: string): void => {
+    const database = getDatabase();
     const datetime = new Date().toISOString();
     const totalKcal = items.reduce((s, i) => s + i.kcal, 0);
+    const notes = items.map(i => `${i.food_name} (${i.portion_g}g)`).join(', ');
 
-    await database.withTransactionAsync(async () => {
-        const result = await database.runAsync(
-            'INSERT INTO Meal (datetime, image_path, total_kcal) VALUES (?, ?, ?)',
-            [datetime, imagePath ?? null, totalKcal]
-        );
-        const mealId = result.lastInsertRowId;
-        for (const item of items) {
-            await database.runAsync(
-                'INSERT INTO MealItem (meal_id, food_name, portion_g, kcal, protein_g, fat_g, carbs_g) VALUES (?, ?, ?, ?, ?, ?, ?)',
-                [mealId, item.food_name, item.portion_g, item.kcal, item.protein_g, item.fat_g, item.carbs_g]
-            );
-        }
-    });
+    const insertMeal = database.prepareSync(
+        'INSERT INTO Meal (datetime, image_path, total_kcal, notes) VALUES (?, ?, ?, ?)'
+    );
+    const result = insertMeal.executeSync([datetime, imagePath || null, totalKcal, notes]);
+    const mealId = result.lastInsertRowId;
+
+    const insertItem = database.prepareSync(
+        'INSERT INTO MealItem (meal_id, food_name, portion_g, kcal, protein_g, fat_g, carbs_g) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    );
+    for (const item of items) {
+        insertItem.executeSync([mealId, item.food_name, item.portion_g, item.kcal, item.protein_g, item.fat_g, item.carbs_g]);
+    }
 };
 
-export const getMeals = async (): Promise<Meal[]> => {
-    const database = await getDb();
-    return database.getAllAsync<Meal>('SELECT * FROM Meal ORDER BY datetime DESC LIMIT 30');
+export const getMeals = (): any[] => {
+    const database = getDatabase();
+    return database.getAllSync<any>('SELECT * FROM Meal ORDER BY datetime DESC LIMIT 30');
 };
