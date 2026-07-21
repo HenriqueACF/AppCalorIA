@@ -1,56 +1,53 @@
-# Welcome to your Expo app 👋
+# CalorIA 🔥📸
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+**CalorIA** é um aplicativo pessoal de controle alimentar que utiliza inteligência artificial para estimar as calorias de uma refeição a partir de uma simples foto.  
+Tire uma foto do seu prato, deixe a IA identificar os alimentos e calcular as calorias, e acompanhe seu consumo diário de forma simples e privada.
 
-## Get started
+---
 
-1. Install dependencies
+## ✨ Funcionalidades
 
-   ```bash
-   npm install
-   ```
+- 📷 **Foto do prato** – Use a câmera ou galeria para capturar a refeição.
+- 🤖 **Análise por IA** – Reconhecimento automático de alimentos e estimativa de porções.
+- 🔢 **Cálculo calórico** – Calorias totais da refeição e macronutrientes (proteínas, gorduras, carboidratos).
+- 📅 **Diário alimentar** – Visualize o total de calorias consumidas no dia.
+- 📜 **Histórico** – Consulte refeições passadas.
+- ✏️ **Ajuste manual** – Corrija alimentos ou porções quando necessário (essencial para maior precisão).
+- 💰 **Custo zero** – Totalmente gratuito para uso pessoal (utiliza cotas gratuitas de APIs cloud).
+- 🔒 **Privacidade** – Seus dados ficam sob seu controle (possibilidade de rodar offline no futuro).
 
-2. Start the app
+---
 
-   ```bash
-   npx expo start
-   ```
+## 🧱 Arquitetura
 
-In the output, you'll find options to open the app in a
+O app se comunica com um backend serverless (Node.js + Express) que orquestra as chamadas às APIs de visão computacional e base de dados nutricionais.  
+Os dados das refeições são armazenados localmente no celular usando SQLite.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+---
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## 🛠️ Tecnologias
 
-## Get a fresh project
+| Camada           | Tecnologia                          |
+|------------------|-------------------------------------|
+| **Mobile**       | React Native (Expo com Expo Router) |
+| **Linguagem**    | TypeScript                          |
+| **Backend**      |   |
+| **Banco local**  | SQLite (expo-sqlite)                |
+| **IA / APIs**    |  |
+| **Hospedagem**   | |
 
-When you're ready, run:
+---
+
+## 🚀 Como executar
+
+### Pré-requisitos
+
+- Node.js 18+
+- npm ou yarn
+- Aplicativo **Expo Go** instalado no celular (Android/iOS)
+
+### 1. Clone o repositório
 
 ```bash
-npm run reset-project
-```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-### Other setup steps
-
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+git clone https://github.com/seu-usuario/calorIA.git
+cd calorIA
