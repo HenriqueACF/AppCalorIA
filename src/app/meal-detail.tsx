@@ -21,11 +21,11 @@ export default function MealDetailScreen() {
         setLoading(false);
     }, [imageUri]);
 
-    const handleSave = async () => {
+    const handleSave = () => {
         try {
-            await saveMeal(items, imageUri);
+            saveMeal(items, imageUri);
             Alert.alert('Salvo!');
-            router.replace('/(tabs)/index');
+            router.replace('/');
         } catch (e) {
             Alert.alert('Erro ao salvar');
         }
@@ -45,7 +45,9 @@ export default function MealDetailScreen() {
                     </View>
                 )}
             />
-            <Text style={styles.total}>Total: {items.reduce((s, i) => s + i.kcal, 0)} kcal</Text>
+            <Text style={styles.total}>
+                Total: {items.reduce((s, i) => s + i.kcal, 0)} kcal
+            </Text>
             <Button title="Salvar Refeição" onPress={handleSave} />
         </View>
     );
