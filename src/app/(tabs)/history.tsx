@@ -9,8 +9,8 @@ export default function HistoryScreen() {
         loadHistory();
     }, []);
 
-    const loadHistory = async () => {
-        const data = await getMeals();
+    const loadHistory =  () => {
+        const data = getMeals();
         setMeals(data);
     };
 

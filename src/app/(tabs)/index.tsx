@@ -1,19 +1,18 @@
 import { useEffect, useState } from 'react';
 import { View, Text, Button, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { initDatabase, getTodayTotalKcal } from '../../database/db';
+import { getTodayTotalKcal } from '../../database/db';
 
 export default function HomeScreen() {
   const [totalKcal, setTotalKcal] = useState(0);
   const router = useRouter();
 
   useEffect(() => {
-    initDatabase();
     loadTodayTotal();
   }, []);
 
-  const loadTodayTotal = async () => {
-    const total = await getTodayTotalKcal();
+  const loadTodayTotal =  () => {
+    const total =  getTodayTotalKcal();
     setTotalKcal(total);
   };
 
