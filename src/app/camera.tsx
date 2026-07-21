@@ -8,13 +8,13 @@ export default function CameraScreen() {
     const router = useRouter();
 
     const takePhoto = async () => {
-        const permission = await ImagePicker.requestCameraPermissionsAsync();
-        if (!permission.granted) {
-            Alert.alert('Permissão necessária');
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        if (status !== 'granted') {
+            Alert.alert('Permissão necessária', 'Habilite o acesso à câmera nas configurações.');
             return;
         }
         const result = await ImagePicker.launchCameraAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            mediaTypes: ['images'],
             quality: 0.8,
         });
         if (!result.canceled) {
@@ -23,8 +23,13 @@ export default function CameraScreen() {
     };
 
     const pickFromGallery = async () => {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+            Alert.alert('Permissão necessária', 'Habilite o acesso à galeria nas configurações.');
+            return;
+        }
         const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            mediaTypes: ['images'],
             quality: 0.8,
         });
         if (!result.canceled) {
