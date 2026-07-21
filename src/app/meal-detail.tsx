@@ -25,7 +25,7 @@ export default function MealDetailScreen() {
         try {
             await saveMeal(items, imageUri);
             Alert.alert('Salvo!');
-            router.replace('/(tabs)');
+            router.replace('/(tabs)/index');
         } catch (e) {
             Alert.alert('Erro ao salvar');
         }
