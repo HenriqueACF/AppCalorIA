@@ -1,20 +1,18 @@
-import { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet } from 'react-native';
-
+import { useCallback, useState } from 'react';
+import { View, Text, FlatList, StyleSheet, Pressable } from 'react-native';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { getMeals } from '../../database/db';
 import { Meal } from '@/types/meal';
 
 export default function HistoryScreen() {
     const [meals, setMeals] = useState<Meal[]>([]);
+    const router = useRouter();
 
-    useEffect(() => {
-        loadHistory();
-    }, []);
-
-    const loadHistory = () => {
-        const data = getMeals();
-        setMeals(data);
-    };
+    useFocusEffect(
+        useCallback(() => {
+            setMeals(getMeals());
+        }, [])
+    );
 
     return (
         <View style={styles.container}>
@@ -25,11 +23,16 @@ export default function HistoryScreen() {
                     <Text style={styles.empty}>Nenhuma refeição registrada ainda.</Text>
                 }
                 renderItem={({ item }) => (
-                    <View style={styles.mealCard}>
-                        <Text style={styles.date}>{item.datetime}</Text>
+                    <Pressable
+                        style={styles.mealCard}
+                        onPress={() => router.push(`/meal-view?id=${item.id}`)}
+                    >
+                        <Text style={styles.date}>
+                            {new Date(item.datetime).toLocaleString('pt-BR')}
+                        </Text>
                         <Text>Total: {item.total_kcal} kcal</Text>
                         <Text>Itens: {item.notes || 'N/A'}</Text>
-                    </View>
+                    </Pressable>
                 )}
             />
         </View>
