@@ -31,10 +31,10 @@ Os dados das refeições são armazenados localmente no celular usando SQLite.
 |------------------|-------------------------------------|
 | **Mobile**       | React Native (Expo com Expo Router) |
 | **Linguagem**    | TypeScript                          |
-| **Backend**      |   |
+| **Backend**      | NodeJs                              |
 | **Banco local**  | SQLite (expo-sqlite)                |
-| **IA / APIs**    |  |
-| **Hospedagem**   | |
+| **IA / APIs**    | Gemini                              |
+| **Hospedagem**   |                                     |
 
 ---
 
