@@ -1,16 +1,12 @@
 import * as SQLite from 'expo-sqlite';
-
-import { Meal, MealItemInput } from '@/types/meal';
+import { Meal, MealItem, MealItemInput } from '@/types/meal';
 
 let db: SQLite.SQLiteDatabase | null = null;
 
-function getDatabase(): SQLite.SQLiteDatabase {
-    if (!db) {
-        db = SQLite.openDatabaseSync('caloria.db');
-
-        db.execSync('PRAGMA foreign_keys = ON;');
-
-        db.runSync(`
+const migrations: ((database: SQLite.SQLiteDatabase) => void)[] = [
+    // 0 -> 1: schema inicial
+    (database) => {
+        database.runSync(`
       CREATE TABLE IF NOT EXISTS Meal (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         datetime TEXT NOT NULL,
@@ -19,8 +15,7 @@ function getDatabase(): SQLite.SQLiteDatabase {
         notes TEXT
       );
     `);
-
-        db.runSync(`
+        database.runSync(`
       CREATE TABLE IF NOT EXISTS MealItem (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         meal_id INTEGER,
@@ -33,6 +28,39 @@ function getDatabase(): SQLite.SQLiteDatabase {
         FOREIGN KEY (meal_id) REFERENCES Meal(id) ON DELETE CASCADE
       );
     `);
+    },
+    // 1 -> 2: configurações (meta diária)
+    (database) => {
+        database.runSync(`
+      CREATE TABLE Settings (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL
+      );
+    `);
+        database.runSync(
+            `INSERT INTO Settings (key, value) VALUES ('daily_goal_kcal', '2000')`
+        );
+    },
+];
+
+function runMigrations(database: SQLite.SQLiteDatabase): void {
+    const { user_version } = database.getFirstSync<{ user_version: number }>(
+        'PRAGMA user_version'
+    ) ?? { user_version: 0 };
+
+    for (let v = user_version; v < migrations.length; v++) {
+        database.withTransactionSync(() => {
+            migrations[v](database);
+            database.execSync(`PRAGMA user_version = ${v + 1}`);
+        });
+    }
+}
+
+function getDatabase(): SQLite.SQLiteDatabase {
+    if (!db) {
+        db = SQLite.openDatabaseSync('caloria.db');
+        db.execSync('PRAGMA foreign_keys = ON;');
+        runMigrations(db);
     }
     return db;
 }
@@ -51,46 +79,55 @@ export const saveMeal = (items: MealItemInput[], imagePath?: string): void => {
     const totalKcal = items.reduce((s, i) => s + i.kcal, 0);
     const notes = items.map((i) => `${i.food_name} (${i.portion_g}g)`).join(', ');
 
-    database.execSync('BEGIN;');
-    try {
-        const insertMeal = database.prepareSync(
-            'INSERT INTO Meal (datetime, image_path, total_kcal, notes) VALUES (?, ?, ?, ?)'
+    database.withTransactionSync(() => {
+        const result = database.runSync(
+            'INSERT INTO Meal (datetime, image_path, total_kcal, notes) VALUES (?, ?, ?, ?)',
+            [datetime, imagePath ?? null, totalKcal, notes]
         );
-        let mealId: number;
-        try {
-            const result = insertMeal.executeSync([datetime, imagePath ?? null, totalKcal, notes]);
-            mealId = result.lastInsertRowId;
-        } finally {
-            insertMeal.finalizeSync();
-        }
+        const mealId = result.lastInsertRowId;
 
-        const insertItem = database.prepareSync(
-            'INSERT INTO MealItem (meal_id, food_name, portion_g, kcal, protein_g, fat_g, carbs_g) VALUES (?, ?, ?, ?, ?, ?, ?)'
-        );
-        try {
-            for (const item of items) {
-                insertItem.executeSync([
-                    mealId,
-                    item.food_name,
-                    item.portion_g,
-                    item.kcal,
-                    item.protein_g,
-                    item.fat_g,
-                    item.carbs_g,
-                ]);
-            }
-        } finally {
-            insertItem.finalizeSync();
+        for (const item of items) {
+            database.runSync(
+                'INSERT INTO MealItem (meal_id, food_name, portion_g, kcal, protein_g, fat_g, carbs_g) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                [mealId, item.food_name, item.portion_g, item.kcal, item.protein_g, item.fat_g, item.carbs_g]
+            );
         }
-
-        database.execSync('COMMIT;');
-    } catch (error) {
-        database.execSync('ROLLBACK;');
-        throw error;
-    }
+    });
 };
 
-export const getMeals = (): Meal[] => {
+export const getMeals = (limit = 30, offset = 0): Meal[] => {
     const database = getDatabase();
-    return database.getAllSync<Meal>('SELECT * FROM Meal ORDER BY datetime DESC LIMIT 30');
+    return database.getAllSync<Meal>(
+        'SELECT * FROM Meal ORDER BY datetime DESC LIMIT ? OFFSET ?',
+        [limit, offset]
+    );
+};
+
+export const getMealItems = (mealId: number): MealItem[] => {
+    const database = getDatabase();
+    return database.getAllSync<MealItem>(
+        'SELECT * FROM MealItem WHERE meal_id = ? ORDER BY id',
+        [mealId]
+    );
+};
+
+export const deleteMeal = (mealId: number): void => {
+    const database = getDatabase();
+    database.runSync('DELETE FROM Meal WHERE id = ?', [mealId]);
+};
+
+export const getDailyGoal = (): number => {
+    const database = getDatabase();
+    const row = database.getFirstSync<{ value: string }>(
+        "SELECT value FROM Settings WHERE key = 'daily_goal_kcal'"
+    );
+    return row ? Number(row.value) : 2000;
+};
+
+export const setDailyGoal = (kcal: number): void => {
+    const database = getDatabase();
+    database.runSync(
+        "UPDATE Settings SET value = ? WHERE key = 'daily_goal_kcal'",
+        [String(kcal)]
+    );
 };
