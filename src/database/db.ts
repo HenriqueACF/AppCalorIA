@@ -127,7 +127,8 @@ export const getDailyGoal = (): number => {
 export const setDailyGoal = (kcal: number): void => {
     const database = getDatabase();
     database.runSync(
-        "UPDATE Settings SET value = ? WHERE key = 'daily_goal_kcal'",
+        `INSERT INTO Settings (key, value) VALUES ('daily_goal_kcal', ?)
+         ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
         [String(kcal)]
     );
 };
