@@ -33,7 +33,7 @@ Os dados das refeições são armazenados localmente no celular usando SQLite.
 | **Linguagem**    | TypeScript                          |
 | **Backend**      | NodeJs                              |
 | **Banco local**  | SQLite (expo-sqlite)                |
-| **IA / APIs**    | Gemini                              |
+| **IA / APIs**    | Gemini-flash                        |
 | **Hospedagem**   |                                     |
 
 ---

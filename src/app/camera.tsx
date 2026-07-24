@@ -3,9 +3,17 @@ import { View, Image, Button, Alert, StyleSheet, Text } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 
+import { useMealStore, PendingImage } from '../store/mealStore';
+
 export default function CameraScreen() {
-    const [imageUri, setImageUri] = useState<string | null>(null);
+    const [asset, setAsset] = useState<PendingImage | null>(null);
     const router = useRouter();
+
+    const toPending = (a: ImagePicker.ImagePickerAsset): PendingImage => ({
+        uri: a.uri,
+        base64: a.base64 ?? '',
+        mediaType: a.uri.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg',
+    });
 
     const takePhoto = async () => {
         const { status } = await ImagePicker.requestCameraPermissionsAsync();
@@ -16,10 +24,9 @@ export default function CameraScreen() {
         const result = await ImagePicker.launchCameraAsync({
             mediaTypes: ['images'],
             quality: 0.8,
+            base64: true,
         });
-        if (!result.canceled) {
-            setImageUri(result.assets[0].uri);
-        }
+        if (!result.canceled) setAsset(toPending(result.assets[0]));
     };
 
     const pickFromGallery = async () => {
@@ -31,21 +38,21 @@ export default function CameraScreen() {
         const result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ['images'],
             quality: 0.8,
+            base64: true,
         });
-        if (!result.canceled) {
-            setImageUri(result.assets[0].uri);
-        }
+        if (!result.canceled) setAsset(toPending(result.assets[0]));
     };
 
     const analyzeMeal = () => {
-        if (!imageUri) return;
-        router.push({ pathname: '/meal-detail', params: { imageUri } });
+        if (!asset) return;
+        useMealStore.getState().setPending(asset);
+        router.push('/meal-detail');
     };
 
     return (
         <View style={styles.container}>
-            {imageUri ? (
-                <Image source={{ uri: imageUri }} style={styles.preview} />
+            {asset ? (
+                <Image source={{ uri: asset.uri }} style={styles.preview} />
             ) : (
                 <View style={styles.placeholder}>
                     <Text>Nenhuma foto</Text>
@@ -53,7 +60,7 @@ export default function CameraScreen() {
             )}
             <Button title="Tirar Foto" onPress={takePhoto} />
             <Button title="Galeria" onPress={pickFromGallery} />
-            {imageUri && <Button title="Analisar" onPress={analyzeMeal} />}
+            {asset && <Button title="Analisar" onPress={analyzeMeal} />}
         </View>
     );
 }
